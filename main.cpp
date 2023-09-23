@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <memory>
+#include <future>
 
 class ConsoleColor{
 public:
@@ -55,10 +56,54 @@ public:
 	
 	int windowHeight;
 	int windowWidth;
-
+	std::atomic<bool> running = true;
+	std::mutex renderMutex;
+	std::mutex inputMutex;
+	float count = 0.0f;
 	std::vector<std::vector<Pixel>> screen;
 
-	Renderer(){
+	void run(){
+		std::thread renderThread(&Renderer::render, this);
+		std::thread inputThread(&Renderer::input, this);
+		renderThread.join();
+		inputThread.join();
+	}
+
+	void onUpdate(int delay){
+		// runs on every 'frame'	
+		if (count < 1.0f)
+			count = count + 0.001f;
+		if (count >= 1.0f)
+			count = 0.0f;
+		Renderer::addRect(0.125f, 0.5f, 1.0f, 0.5f, ConsoleColor(255,0,0));
+		Renderer::addRect(0.125f, 0.55f, 1.0f, 0.55f, ConsoleColor(128,255,255));
+		Renderer::addRect(0.0f, count, 1.0f, count, ConsoleColor(0,0,255));
+	};
+
+	void onInput(std::string input){
+		std::cout << "lets goo" << std::endl;
+		count = 0.0f;
+	};
+
+	void input(){
+		std::string input;
+		while(running){
+			std::cin >> input;
+			onInput(input);
+		}
+	}
+
+	void render(){
+		int delayms = 16;
+		initScreen();
+		while(running){
+			onUpdate(delayms);
+			renderScreen();
+			std::this_thread::sleep_for(std::chrono::milliseconds(delayms));
+		}
+	}
+
+	void initScreen(){
 		struct winsize w;
 		ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 		windowWidth = w.ws_col;
@@ -79,22 +124,7 @@ public:
 			row.clear();
 		}
 	}
-	~Renderer(){
-		//make cursor visible again
-		std::cout << "\x1b[?25h" << std::endl;	// disable cursor
-	}
 
-
-	virtual void onUpdate(int delay){};
-
-	void mainLoop(){
-		int delayms = 16;
-		while (true){	// updateloop
-			onUpdate(delayms);
-			renderScreen();
-			std::this_thread::sleep_for(std::chrono::milliseconds(delayms));
-		}
-	}
 	void renderScreen(){
 		for (auto y=screen.begin(); y!=screen.end(); ++y){
 			for (auto x= y->begin(); x!= y->end(); ++x) {// this feels like black magic to me
@@ -146,32 +176,8 @@ public:
 
 };
 
-class Custom : public Renderer{
-public:
-	float count = 0.0f;
-
-	Custom() : Renderer(){}
-
-	void onUpdate(int delayms){
-		// runs on every 'frame'	
-		if (count < 1.0f)
-			count = count + 0.001f;
-		if (count >= 1.0f)
-			count = 0.0f;
-		Renderer::addRect(0.125f, 0.5f, 1.0f, 0.5f, ConsoleColor(255,0,0));
-		Renderer::addRect(0.125f, 0.55f, 1.0f, 0.55f, ConsoleColor(128,255,255));
-		Renderer::addRect(0.0f, count, 1.0f, count, ConsoleColor(0,0,255));
-	}
-
-	void startConsole(){
-		Renderer::mainLoop();
-	}
-
-};
-
 int main(){
-
-	Custom myConsole = Custom();
-	myConsole.startConsole();
+	Renderer test = Renderer();
+	test.run();
 }
 
