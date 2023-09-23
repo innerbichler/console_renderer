@@ -8,23 +8,45 @@
 #include <cstdlib>
 #include <memory>
 
+class ConsoleColor{
+public:
+	int green;
+	int red;
+	int blue;
+	bool transparent = false;
 
+	ConsoleColor(int r, int g, int b){
+		red = r;
+		green = g;
+		blue = b;
+	}
+	std::string fg(){
+		if (transparent)
+			return "\u001b[0m";
+		return "\033[38;2;" + std::to_string(red) + ";" + std::to_string(green) + ";" + std::to_string(blue) + "m";
+	}
+	std::string bg(){
+		if (transparent)
+			return "\u001b[0m";
+		return "\033[48;2;" + std::to_string(red) + ";" + std::to_string(green) + ";" + std::to_string(blue) + "m";
+	}
+};
 
 class Pixel{
 public:
 	
 	char value;
-	std::string fg;
-	std::string bg;
+	ConsoleColor fg = ConsoleColor(0,0,0);
+	ConsoleColor bg = ConsoleColor(0,0,0);
 
-	Pixel(char v, std::string f, std::string b){
+	Pixel(char v, ConsoleColor f, ConsoleColor b){
 		value = v;
 		fg = f;
 		bg = b;
 	};
 
 	std::string get_value(){
-		return fg + bg + value;
+		return fg.fg() + bg.bg() + value;
 	}
 };
 
@@ -47,8 +69,10 @@ public:
 		for (int y=0; y<Renderer::windowHeight; y++) {
 			for (int x=0; x<Renderer::windowWidth; x++) {
 				char letter = ' ';
-				std::string fg = "\u001b[37m";
-				std::string bg = "\u001b[0m";
+				ConsoleColor fg = ConsoleColor(255,255,255);
+				ConsoleColor bg = ConsoleColor(0,0,0);
+				bg.transparent = true;
+				//std::string bg = "\u001b[0m";
 				row.push_back(Pixel(letter, fg, bg));
 			}
 			screen.push_back(row);
@@ -60,7 +84,7 @@ public:
 	virtual void onUpdate(int delay){};
 
 	void mainLoop(){
-		int delayms = 250;
+		int delayms = 16;
 		while (true){	// updateloop
 			onUpdate(delayms);
 			renderScreen();
@@ -69,15 +93,26 @@ public:
 	}
 	void renderScreen(){
 		for (auto y=screen.begin(); y!=screen.end(); ++y){
-			for (auto x= y->begin(); x!= y->end(); ++x) // this feels like black magic to me
+			for (auto x= y->begin(); x!= y->end(); ++x) {// this feels like black magic to me
 				std::cout << x->get_value();
-		}
-		std::cout << "\x1b[?25l";	// disable cursor
-		std::cout << std::endl;
-		std::cout << "\x1B[2J\x1B[H";
+			}
+			std::cout << std::flush;		// flush buffer
 		}
 
-	void addRect(float x1, float y1, float x2, float y2, std::string color){
+		std::cout << "\x1b[?25l";	// disable cursor
+		std::cout << "\x1B[H";	// move cursor to home 
+
+		for (auto y=screen.begin(); y!=screen.end(); ++y){
+			for (auto x= y->begin(); x!= y->end(); ++x){ // this feels like black magic to me
+				x->value = ' ';
+				x->fg = ConsoleColor(255,255,255);
+				x->bg = ConsoleColor(0,0,0);
+				x->bg.transparent = true;
+			}
+		}
+	}
+
+	void addRect(float x1, float y1, float x2, float y2, ConsoleColor color){
 		// wrapper around manipulating the screen vector directly
 		int newx1 = (windowWidth-1) * x1;
 		int newy1 = (windowHeight-1) * y1;
@@ -109,14 +144,19 @@ public:
 
 class Custom : public Renderer{
 public:
-	int count = 0;
+	float count = 0.0f;
 
 	Custom() : Renderer(){}
 
 	void onUpdate(int delayms){
 		// runs on every 'frame'	
-		Renderer::addRect(0.125f, 0.5f, 1.0f, 0.5f, "\u001b[41m");
-		Renderer::addRect(0.125f, 1.0f, 0.5f, 1.0f, "\u001b[44m");
+		if (count < 1.0f)
+			count = count + 0.001f;
+		if (count >= 1.0f)
+			count = 0.0f;
+		Renderer::addRect(0.125f, 0.5f, 1.0f, 0.5f, ConsoleColor(255,0,0));
+		Renderer::addRect(0.125f, 0.55f, 1.0f, 0.55f, ConsoleColor(128,255,255));
+		Renderer::addRect(0.0f, count, 1.0f, count, ConsoleColor(0,0,255));
 	}
 
 	void startConsole(){
