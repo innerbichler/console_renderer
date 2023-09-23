@@ -78,8 +78,12 @@ public:
 			screen.push_back(row);
 			row.clear();
 		}
-//
 	}
+	~Renderer(){
+		//make cursor visible again
+		std::cout << "\x1b[?25h" << std::endl;	// disable cursor
+	}
+
 
 	virtual void onUpdate(int delay){};
 
