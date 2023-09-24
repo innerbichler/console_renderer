@@ -23,7 +23,7 @@ class Custom : public cr::Renderer{
 		blocks.push_back(cr::Rect(cr::v2f(0.0f,0.0f), cr::v2f(1.0f,0.0f), cr::ConsoleColor(1,13,21)));
 		blocks.push_back(cr::Rect(cr::v2f(1.0f,0.0f), cr::v2f(1.0f,1.0f), cr::ConsoleColor(1,13,21)));
 		blocks.push_back(cr::Rect(cr::v2f(0.0f,1.0f), cr::v2f(1.0f,1.0f), cr::ConsoleColor(1,13,21)));
-		blocks.push_back(cr::Rect(cr::v2f(0.5f, 0.4f), cr::v2f(0.6f, 0.6f), cr::ConsoleColor(46,55,64)));
+		blocks.push_back(cr::Rect(cr::v2f(0.5f, 0.4f), cr::v2f(0.6f, 0.6f), cr::ConsoleColor(1,13,21)));
 	}
 	bool playerCollision(){
 
