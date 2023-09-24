@@ -11,6 +11,16 @@
 #include <termios.h>
 
 namespace cr{
+class v2f{
+public: 
+	// custom vector type
+	float x;
+	float y;
+	v2f(float x1, float y1){
+		x = x1;
+		y = y1;
+	}
+};
 
 class ConsoleColor{
 public:
@@ -54,6 +64,19 @@ public:
 	}
 };
 
+class Rect{
+public:
+	v2f start = cr::v2f(0.0f, 0.0f);
+	v2f end = cr::v2f(0.0f, 0.0f);
+	ConsoleColor color =  cr::ConsoleColor(0,0,0);
+
+	Rect(v2f s, v2f e, ConsoleColor c){
+		start = s;
+		end = e;
+		color = c;
+	}
+};
+
 class Renderer{
 public:
 	
@@ -62,10 +85,12 @@ public:
 	std::atomic<bool> running = true;
 	std::mutex renderMutex;
 	std::mutex inputMutex;
+	ConsoleColor background = ConsoleColor(0,0,0);
 
 	std::vector<std::vector<Pixel>> screen;
 
 	virtual void onUpdate(int delay){};
+	virtual void onCreate(){};
 	virtual void onInput(char input){};
 
 	void run(){
@@ -86,6 +111,7 @@ public:
 	void render(){
 		int delayms = 16;
 		initScreen();
+		onCreate();
 		while(running){
 			onUpdate(delayms);
 			renderScreen();
@@ -105,10 +131,7 @@ public:
 			for (int x=0; x<Renderer::windowWidth; x++) {
 				char letter = ' ';
 				ConsoleColor fg = ConsoleColor(255,255,255);
-				ConsoleColor bg = ConsoleColor(0,0,0);
-				bg.transparent = true;
-				//std::string bg = "\u001b[0m";
-				row.push_back(Pixel(letter, fg, bg));
+				row.push_back(Pixel(letter, fg, background));
 			}
 			screen.push_back(row);
 			row.clear();
@@ -130,18 +153,17 @@ public:
 			for (auto x= y->begin(); x!= y->end(); ++x){ // this feels like black magic to me
 				x->value = ' ';
 				x->fg = ConsoleColor(255,255,255);
-				x->bg = ConsoleColor(0,0,0);
-				x->bg.transparent = true;
+				x->bg = background;
 			}
 		}
 	}
 
-	void addRect(float x1, float y1, float x2, float y2, ConsoleColor color){
+	void drawRect(v2f start, v2f end, ConsoleColor color){
 		// wrapper around manipulating the screen vector directly
-		int newx1 = (windowWidth-1) * x1;
-		int newy1 = (windowHeight-1) * y1;
-		int newx2 = (windowWidth-1) * x2;
-		int newy2 = (windowHeight-1) * y2;
+		int newx1 = (windowWidth-1) * start.x;
+		int newy1 = (windowHeight-1) * start.y;
+		int newx2 = (windowWidth-1) * end.x;
+		int newy2 = (windowHeight-1) * end.y;
 
 		
 		for (int i = newy1; i <= newy2; ++i) {
@@ -163,6 +185,31 @@ public:
 		}
 
 	}
+	bool rectCollision(Rect first, Rect second){
+		// collision implemented here because screen is just an array with low res 
+
+		int firstx1 = (windowWidth-1) * first.start.x;
+		int firsty1 = (windowHeight-1) * first.start.y;
+		int firstx2 = (windowWidth-1) * first.end.x;
+		int firsty2 = (windowHeight-1) * first.end.y;
+
+		int secondx1 = (windowWidth-1) * second.start.x;
+		int secondy1 = (windowHeight-1) * second.start.y;
+		int secondx2 = (windowWidth-1) * second.end.x;
+		int secondy2 = (windowHeight-1) * second.end.y;
+		
+
+		if (firstx1 <= secondx2 && firstx1 >= secondx1)
+			if(firsty1 >= secondy1 && firsty1 <= secondy2)
+				return true;
+
+		if (firstx2 <= secondx2 && firstx2 >= secondx1)
+			if(firsty2 >= secondy1 && firsty2 <= secondy2)
+				return true;
+
+		return false;
+
+	}
 	int key_press() { // not working: ¹ (251), num lock (-144), caps lock (-20), windows key (-91), kontext menu key (-93)
 	    struct termios term;
 	    tcgetattr(0, &term);
@@ -172,7 +219,6 @@ public:
 		int nbbytes;
 		ioctl(0, FIONREAD, &nbbytes); // 0 is STDIN
 		while(!nbbytes) {
-		    sleep(0.01);
 		    fflush(stdout);
 		    ioctl(0, FIONREAD, &nbbytes); // 0 is STDIN
 		}
@@ -260,6 +306,5 @@ public:
 		}
 	    }
 	}
-
 };
 }
