@@ -161,13 +161,24 @@ public:
 		}
 	}
 
+	void drawText(v2f start, std::string input, ConsoleColor color){
+		// only overrides Value
+		int newx1 = (windowWidth-1) * start.x;
+		int newy1 = (windowHeight-1) * start.y;
+
+		int count = 0;
+		for(auto c : input){
+			screen[newy1][newx1 + count].value = c;
+			screen[newy1][newx1 + count].fg = color;
+			++count;
+		}
+	}
 	void drawRect(v2f start, v2f end, ConsoleColor color){
 		// wrapper around manipulating the screen vector directly
 		int newx1 = (windowWidth-1) * start.x;
 		int newy1 = (windowHeight-1) * start.y;
 		int newx2 = (windowWidth-1) * end.x;
 		int newy2 = (windowHeight-1) * end.y;
-
 		
 		for (int i = newy1; i <= newy2; ++i) {
 			for (int j = newx1; j <= newx2; ++j) {
