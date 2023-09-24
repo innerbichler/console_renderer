@@ -20,7 +20,8 @@ class Custom : public cr::Renderer{
 	}
 
 	void onInput(char input){
-		// handle user input
+		// handle user input 
+		// is async; and only called when input happens
 
 		if (input == 'w' && player.start.y >= 0.0f){
 			player.start.y -= 0.03f;

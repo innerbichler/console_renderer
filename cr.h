@@ -89,8 +89,11 @@ public:
 
 	std::vector<std::vector<Pixel>> screen;
 
+	// called every frame
 	virtual void onUpdate(int delay){};
+	// called once after screen init
 	virtual void onCreate(){};
+	// called async on every user input
 	virtual void onInput(char input){};
 
 	void run(){
