@@ -112,7 +112,7 @@ public:
 	}
 
 	void render(){
-		int delayms = 16;
+		int delayms = 64;
 		initScreen();
 		onCreate();
 		while(running){
