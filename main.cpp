@@ -13,7 +13,7 @@ class Custom : public cr::Renderer{
 	cr::Rect rightBorder = cr::Rect(cr::v2f(0.99f,0.0f), cr::v2f(1.0f,1.0f), cr::ConsoleColor(1,13,21));
 	cr::Rect bottomBorder = cr::Rect(cr::v2f(0.0f,0.999f), cr::v2f(1.0f,1.0f), cr::ConsoleColor(1,13,21));
 
-	cr::v2f blockSpeed = cr::v2f(0.008f, 0.03f);
+	cr::v2f blockSpeed = cr::v2f(0.004f, 0.01f);
 
 	std::vector<cr::Rect> blocks;
 	int blockColl = 0;
@@ -188,10 +188,10 @@ class Custom : public cr::Renderer{
 
 
 		cr::Renderer::drawText(cr::v2f(0.5f,1.0f), lastInput, mainFg);
-		cr::Renderer::drawText(cr::v2f(0.2f,1.0f), "Time between: " + std::to_string(delay)+"ms", mainFg);
+		cr::Renderer::drawText(cr::v2f(0.2f,1.0f), "\ue62b Time between: " + std::to_string(delay)+"ms", cr::ConsoleColor(255,0,0));
 		cr::Renderer::drawText(cr::v2f(0.7f,1.0f), "Player: " + std::to_string(player.start.x) +std::to_string(player.start.y), mainFg);
 
-		cr::Renderer::drawRect(player.start, player.end, player.color);
+		cr::Renderer::drawText(player.start, "\uf0c8", player.color);
 
 		cr::Renderer::drawRect(topBorder.start, topBorder.end, topBorder.color);
 		cr::Renderer::drawRect(rightBorder.start, rightBorder.end, rightBorder.color);

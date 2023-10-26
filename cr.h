@@ -22,6 +22,17 @@ public:
 	}
 };
 
+class v2d{
+public: 
+	// custom vector type
+	int x;
+	int y;
+	v2d(int x1, int y1){
+		x = x1;
+		y = y1;
+	}
+};
+
 class ConsoleColor{
 public:
 	int green;
@@ -60,7 +71,7 @@ public:
 	};
 
 	std::string get_value(){
-		return fg.fg() + bg.bg() + value;
+		return bg.bg() + fg.fg() + value;
 	}
 };
 
@@ -86,6 +97,7 @@ public:
 	std::mutex renderMutex;
 	std::mutex inputMutex;
 	ConsoleColor background = ConsoleColor(0,0,0);
+	ConsoleColor foreground = ConsoleColor(255,255,255);
 
 	std::vector<std::vector<Pixel>> screen;
 
@@ -112,7 +124,7 @@ public:
 	}
 
 	void render(){
-		int delayms = 64;
+		int delayms = 1;
 		initScreen();
 		onCreate();
 		while(running){
@@ -133,8 +145,7 @@ public:
 		for (int y=0; y<Renderer::windowHeight; y++) {
 			for (int x=0; x<Renderer::windowWidth; x++) {
 				char letter = ' ';
-				ConsoleColor fg = ConsoleColor(255,255,255);
-				row.push_back(Pixel(letter, fg, background));
+				row.push_back(Pixel(letter, foreground, background));
 			}
 			screen.push_back(row);
 			row.clear();
@@ -152,13 +163,23 @@ public:
 		std::cout << "\x1b[?25l";	// disable cursor
 		std::cout << "\x1B[H";	// move cursor to home 
 
+		// reset screen to normal
 		for (auto y=screen.begin(); y!=screen.end(); ++y){
 			for (auto x= y->begin(); x!= y->end(); ++x){ // this feels like black magic to me
 				x->value = ' ';
-				x->fg = ConsoleColor(255,255,255);
 				x->bg = background;
+				x->fg = foreground;
 			}
 		}
+	}
+	void drawTextPrecise(v2d start, std::string input, ConsoleColor color){
+		int count = 0;
+		for(auto c : input){
+			screen[start.y][start.x + count].value = c;
+			screen[start.y][start.x + count].fg = color;
+			++count;
+		}
+
 	}
 
 	void drawText(v2f start, std::string input, ConsoleColor color){
@@ -173,6 +194,31 @@ public:
 			++count;
 		}
 	}
+	void drawRectPrecise(v2d start, v2d end, ConsoleColor bg, ConsoleColor fg){
+
+		for(int i=start.y; i<= end.y; ++i){
+			for(int j=start.x; j<= end.x; ++j){
+				screen[i][j].bg = bg;
+				screen[i][j].fg = fg;
+			}
+			for(int j=start.x; j>= end.x; --j){
+				screen[i][j].bg = bg;
+				screen[i][j].fg = fg;
+			}
+		}
+		for(int i=start.y; i>= end.y; --i){
+			for(int j=start.x; j<= end.x; ++j){
+				screen[i][j].bg = bg;
+				screen[i][j].fg = fg;
+			}
+			for(int j=start.x; j>= end.x; --j){
+				screen[i][j].bg = bg;
+				screen[i][j].fg = fg;
+			}
+		}
+
+	}
+	
 	void drawRect(v2f start, v2f end, ConsoleColor color){
 		// wrapper around manipulating the screen vector directly
 		int newx1 = (windowWidth-1) * start.x;
@@ -237,7 +283,10 @@ public:
 		    ioctl(0, FIONREAD, &nbbytes); // 0 is STDIN
 		}
 		int key = (int)getchar();
-		if(key==27||key==194||key==195) { // escape, 194/195 is escape for °ß´äöüÄÖÜ
+		if(key==27){
+			return 27;
+		}
+		if(key==27||key==194||key==195) { //194/195 is escape for °ß´äöüÄÖÜ
 		    key = (int)getchar();
 		    if(key==91) { // [ following escape
 			key = (int)getchar(); // get code of next char after \e[
